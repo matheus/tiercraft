@@ -1,0 +1,79 @@
+{
+  "id": "tiercraft-app",
+  "name": "TierCraft - Criador e Apresentador de Tier List",
+  "short_name": "TierCraft",
+  "description": "Crie, personalize, organize e apresente suas Tier Lists personalizadas com fotos e textos de forma totalmente interativa.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0d14",
+  "theme_color": "#0b0d14",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": [
+    "utilities",
+    "productivity",
+    "entertainment"
+  ],
+  "icons": [
+    {
+      "src": "assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nova Tier List",
+      "short_name": "Nova Lista",
+      "description": "Criar uma nova Tier List rapidamente",
+      "url": "./index.html?action=new",
+      "icons": [
+        {
+          "src": "assets/icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Modo Apresentação / Foco",
+      "short_name": "Apresentação",
+      "description": "Abrir no modo de apresentação em tela cheia",
+      "url": "./index.html?action=focus",
+      "icons": [
+        {
+          "src": "assets/icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

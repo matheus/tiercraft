@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgRadial" cx="50%" cy="36%" r="64%">
+      <stop offset="0%" stop-color="#1c2136"/>
+      <stop offset="55%" stop-color="#101322"/>
+      <stop offset="100%" stop-color="#080a11"/>
+    </radialGradient>
+    
+    <!-- Outer Border Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+
+    <!-- Gold Gradients for Trophy -->
+    <linearGradient id="goldCup" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff8d1"/>
+      <stop offset="20%" stop-color="#ffd530"/>
+      <stop offset="65%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="goldHandle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffeaa7"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="goldPedestal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffd530"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- Vibrant Tier Row Gradients -->
+    <linearGradient id="tierS_grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="tierA_grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffa502"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+    <linearGradient id="tierB_grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+
+    <filter id="shadowHeavy" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="glowGold" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle Base with Deep Modern Gradient -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bgRadial)"/>
+  <!-- Glowing Border Outline -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="none" stroke="url(#borderGrad)" stroke-width="7" opacity="0.9"/>
+
+  <!-- Ambient Light Halo behind trophy -->
+  <circle cx="256" cy="180" r="130" fill="#6366f1" opacity="0.16"/>
+  <circle cx="256" cy="175" r="85" fill="#fbbf24" opacity="0.2"/>
+
+  <!-- TIER LIST BOARD ROWS -->
+  <g id="tier-rows" filter="url(#shadowHeavy)">
+    <!-- ROW S (Top) -->
+    <g transform="translate(106, 318)">
+      <rect x="0" y="0" width="300" height="36" rx="9" fill="url(#tierS_grad)"/>
+      <rect x="0" y="0" width="48" height="36" rx="9" fill="#000000" opacity="0.2"/>
+      <rect x="40" y="0" width="8" height="36" fill="#000000" opacity="0.2"/>
+      <line x1="48" y1="0" x2="48" y2="36" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+      <text x="24" y="19" font-family="'DejaVu Sans', 'Liberation Sans', sans-serif" font-size="21" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">S</text>
+      <g fill="#ffffff" opacity="0.25">
+        <rect x="58" y="5" width="26" height="26" rx="5"/>
+        <rect x="92" y="5" width="26" height="26" rx="5"/>
+        <rect x="126" y="5" width="26" height="26" rx="5"/>
+        <rect x="160" y="5" width="26" height="26" rx="5"/>
+        <rect x="194" y="5" width="26" height="26" rx="5"/>
+      </g>
+    </g>
+
+    <!-- ROW A (Middle) -->
+    <g transform="translate(76, 362)">
+      <rect x="0" y="0" width="360" height="36" rx="9" fill="url(#tierA_grad)"/>
+      <rect x="0" y="0" width="48" height="36" rx="9" fill="#000000" opacity="0.18"/>
+      <rect x="40" y="0" width="8" height="36" fill="#000000" opacity="0.18"/>
+      <line x1="48" y1="0" x2="48" y2="36" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+      <text x="24" y="19" font-family="'DejaVu Sans', 'Liberation Sans', sans-serif" font-size="21" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">A</text>
+      <g fill="#ffffff" opacity="0.25">
+        <rect x="58" y="5" width="26" height="26" rx="5"/>
+        <rect x="92" y="5" width="26" height="26" rx="5"/>
+        <rect x="126" y="5" width="26" height="26" rx="5"/>
+        <rect x="160" y="5" width="26" height="26" rx="5"/>
+        <rect x="194" y="5" width="26" height="26" rx="5"/>
+        <rect x="228" y="5" width="26" height="26" rx="5"/>
+      </g>
+    </g>
+
+    <!-- ROW B (Bottom) -->
+    <g transform="translate(46, 406)">
+      <rect x="0" y="0" width="420" height="36" rx="9" fill="url(#tierB_grad)"/>
+      <rect x="0" y="0" width="48" height="36" rx="9" fill="#000000" opacity="0.2"/>
+      <rect x="40" y="0" width="8" height="36" fill="#000000" opacity="0.2"/>
+      <line x1="48" y1="0" x2="48" y2="36" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+      <text x="24" y="19" font-family="'DejaVu Sans', 'Liberation Sans', sans-serif" font-size="21" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">B</text>
+      <g fill="#ffffff" opacity="0.25">
+        <rect x="58" y="5" width="26" height="26" rx="5"/>
+        <rect x="92" y="5" width="26" height="26" rx="5"/>
+        <rect x="126" y="5" width="26" height="26" rx="5"/>
+        <rect x="160" y="5" width="26" height="26" rx="5"/>
+        <rect x="194" y="5" width="26" height="26" rx="5"/>
+        <rect x="228" y="5" width="26" height="26" rx="5"/>
+        <rect x="262" y="5" width="26" height="26" rx="5"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- GOLDEN TROPHY -->
+  <g id="trophy" filter="url(#shadowHeavy)">
+    <path d="M 166 112 C 108 112 108 210 186 214 L 186 190 C 136 188 136 134 178 134 Z" fill="url(#goldHandle)"/>
+    <path d="M 346 112 C 404 112 404 210 326 214 L 326 190 C 376 188 376 134 334 134 Z" fill="url(#goldHandle)"/>
+
+    <path d="M 234 246 L 278 246 L 286 282 L 226 282 Z" fill="url(#goldPedestal)"/>
+    <rect x="210" y="280" width="92" height="15" rx="5" fill="#d97706"/>
+    <rect x="194" y="293" width="124" height="25" rx="6" fill="url(#goldPedestal)"/>
+    <rect x="202" y="296" width="108" height="4" rx="2" fill="#fff8cc" opacity="0.8"/>
+
+    <path d="M 160 84 L 352 84 C 352 190 316 250 256 252 C 196 250 160 190 160 84 Z" fill="url(#goldCup)"/>
+
+    <ellipse cx="256" cy="84" rx="96" ry="17" fill="#fff8cc"/>
+    <ellipse cx="256" cy="84" rx="88" ry="12" fill="#d97706" opacity="0.75"/>
+    <ellipse cx="256" cy="84" rx="83" ry="9" fill="#92400e" opacity="0.55"/>
+
+    <path d="M 180 98 C 180 170 205 222 238 240 C 218 222 202 172 202 98 Z" fill="#ffffff" opacity="0.25"/>
+
+    <g transform="translate(256, 164)">
+      <polygon points="0,-32 9,-10 32,-10 14,5 20,28 0,14 -20,28 -14,5 -32,-10 -9,-10" fill="#ffffff" filter="url(#glowGold)"/>
+      <polygon points="0,-27 8,-9 27,-9 12,4 17,23 0,11 -17,23 -12,4 -27,-9 -8,-9" fill="#fffef0"/>
+    </g>
+
+    <g transform="translate(338, 78)">
+      <path d="M0,-18 Q2,-2 18,0 Q2,2 0,18 Q-2,2 -18,0 Q-2,-2 0,-18 Z" fill="#ffffff"/>
+      <circle cx="0" cy="0" r="3" fill="#ffffff"/>
+    </g>
+  </g>
+</svg>

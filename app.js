@@ -6,8 +6,110 @@
 (function () {
   'use strict';
 
-  // LocalStorage Key
+  // LocalStorage Keys
   const STORAGE_KEY = 'tiercraft_app_data_v1';
+  const THEME_STORAGE_KEY = 'tiercraft_theme_settings';
+
+  // Default Theme Configuration & Presets
+  const DEFAULT_THEME = {
+    id: 'dark',
+    font: 'Outfit',
+    customColors: {
+      bgDark: '#0b0d14',
+      bgCard: '#131722',
+      accentPrimary: '#6366f1',
+      textMain: '#f8fafc'
+    }
+  };
+
+  const THEME_PRESETS = {
+    dark: {
+      name: 'Escuro',
+      icon: '🌙',
+      defaultFont: 'Outfit',
+      colors: {
+        bgDark: '#0b0d14',
+        bgCard: '#131722',
+        accentPrimary: '#6366f1',
+        textMain: '#f8fafc'
+      }
+    },
+    light: {
+      name: 'Claro',
+      icon: '☀️',
+      defaultFont: 'Outfit',
+      colors: {
+        bgDark: '#f8fafc',
+        bgCard: '#ffffff',
+        accentPrimary: '#4f46e5',
+        textMain: '#0f172a'
+      }
+    },
+    cyberpunk: {
+      name: 'Cyberpunk',
+      icon: '⚡',
+      defaultFont: 'Space Grotesk',
+      colors: {
+        bgDark: '#05060f',
+        bgCard: '#0d1020',
+        accentPrimary: '#f43f5e',
+        textMain: '#f8fafc'
+      }
+    },
+    retro: {
+      name: 'Retro Arcade',
+      icon: '🕹️',
+      defaultFont: 'Press Start 2P',
+      colors: {
+        bgDark: '#14121e',
+        bgCard: '#201c31',
+        accentPrimary: '#ffb000',
+        textMain: '#f5f5f7'
+      }
+    },
+    midnight: {
+      name: 'Midnight OLED',
+      icon: '🌌',
+      defaultFont: 'Outfit',
+      colors: {
+        bgDark: '#000000',
+        bgCard: '#0d0d0d',
+        accentPrimary: '#3b82f6',
+        textMain: '#ffffff'
+      }
+    },
+    forest: {
+      name: 'Floresta Esmeralda',
+      icon: '🌲',
+      defaultFont: 'Plus Jakarta Sans',
+      colors: {
+        bgDark: '#061612',
+        bgCard: '#0d231e',
+        accentPrimary: '#10b981',
+        textMain: '#f0fdf4'
+      }
+    },
+    custom: {
+      name: 'Personalizado',
+      icon: '🎨',
+      defaultFont: 'Outfit',
+      colors: {
+        bgDark: '#0b0d14',
+        bgCard: '#131722',
+        accentPrimary: '#6366f1',
+        textMain: '#f8fafc'
+      }
+    }
+  };
+
+  const FONT_MAP = {
+    'Outfit': "'Outfit', -apple-system, BlinkMacSystemFont, sans-serif",
+    'Plus Jakarta Sans': "'Plus Jakarta Sans', sans-serif",
+    'Inter': "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    'Space Grotesk': "'Space Grotesk', sans-serif",
+    'Fredoka': "'Fredoka', cursive, sans-serif",
+    'Press Start 2P': "'Press Start 2P', monospace, cursive"
+  };
 
   // Default Presets Configuration
   const PRESETS = {
@@ -51,6 +153,7 @@
   // State
   let state = {
     activeTierListId: 'default',
+    theme: JSON.parse(JSON.stringify(DEFAULT_THEME)),
     tierLists: {
       'default': {
         id: 'default',
@@ -103,8 +206,6 @@
   const modalSoundSettings = document.getElementById('modal-sound-settings');
 
   // Item Form Elements
-  const tabButtons = document.querySelectorAll('.tab-btn');
-  const tabContents = document.querySelectorAll('.tab-content');
   const fileDropArea = document.getElementById('file-drop-area');
   const itemImageFile = document.getElementById('item-image-file');
   const itemImageUrl = document.getElementById('item-image-url');
@@ -140,8 +241,285 @@
   const jsonPreview = document.getElementById('json-preview');
   const btnApplyJsonText = document.getElementById('btn-apply-json-text');
 
+  // AI Import Elements
+  const modalImportAi = document.getElementById('modal-import-ai');
+  const btnHeaderAiImport = document.getElementById('btn-header-ai-import');
+  const btnImportAiList = document.getElementById('btn-import-ai-list');
+  const btnSwitchToAiImport = document.getElementById('btn-switch-to-ai-import');
+  const inputImportSingleJson = document.getElementById('input-import-single-json');
+  const aiJsonInput = document.getElementById('ai-json-input');
+  const btnConfirmImportSingle = document.getElementById('btn-confirm-import-single');
+  const importJsonError = document.getElementById('import-json-error');
+  const btnCopyAiPrompt = document.getElementById('btn-copy-ai-prompt');
+  const aiPromptTemplateEl = document.getElementById('ai-prompt-template');
+  const aiJsonExampleEl = document.getElementById('ai-json-example');
+
   // Canvas
   const exportCanvas = document.getElementById('export-canvas');
+
+  // Theme & Typography Elements
+  const modalTheme = document.getElementById('modal-theme');
+  const btnThemeModal = document.getElementById('btn-theme-modal');
+  const themeBtnIcon = document.getElementById('theme-btn-icon');
+  const themeBtnLabel = document.getElementById('theme-btn-label');
+  const fontLivePreview = document.getElementById('font-live-preview');
+  const customColorBg = document.getElementById('custom-color-bg');
+  const customColorCard = document.getElementById('custom-color-card');
+  const customColorAccent = document.getElementById('custom-color-accent');
+  const customColorText = document.getElementById('custom-color-text');
+  const hexValBg = document.getElementById('hex-val-bg');
+  const hexValCard = document.getElementById('hex-val-card');
+  const hexValAccent = document.getElementById('hex-val-accent');
+  const hexValText = document.getElementById('hex-val-text');
+  const btnApplyCustomColors = document.getElementById('btn-apply-custom-colors');
+  const btnResetDefaultTheme = document.getElementById('btn-reset-default-theme');
+  const metaThemeColor = document.getElementById('meta-theme-color');
+
+  // ==========================================
+  // PWA SUPPORT & INSTALLATION MANAGER
+  // ==========================================
+
+  let deferredInstallPrompt = null;
+
+  function showNotificationToast(message, duration = 3200) {
+    let toast = document.getElementById('app-notification-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'app-notification-toast';
+      toast.className = 'app-notification-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, duration);
+  }
+
+  function setupPWA() {
+    const btnInstall = document.getElementById('btn-pwa-install');
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                         window.navigator.standalone === true ||
+                         document.referrer.includes('android-app://');
+
+    // Register Service Worker for offline capability
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            console.log('[TierCraft PWA] Service Worker registrado:', registration.scope);
+
+            // Listen for service worker updates
+            registration.addEventListener('updatefound', () => {
+              const installingWorker = registration.installing;
+              if (installingWorker) {
+                installingWorker.addEventListener('statechange', () => {
+                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    showNotificationToast('Nova versão disponível! Recarregue para atualizar.', 4000);
+                  }
+                });
+              }
+            });
+          })
+          .catch((err) => {
+            console.warn('[TierCraft PWA] Falha ao registrar Service Worker:', err);
+          });
+      });
+    }
+
+    // PWA Install prompt handling
+    if (btnInstall) {
+      if (isStandalone) {
+        btnInstall.style.display = 'none';
+        return;
+      }
+
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+      // On iOS Safari, beforeinstallprompt does not fire; show install button to provide guide modal
+      if (isIOS) {
+        btnInstall.style.display = 'inline-flex';
+        btnInstall.addEventListener('click', () => {
+          const modalIOS = document.getElementById('modal-ios-install');
+          if (modalIOS) openModal(modalIOS);
+        });
+      }
+
+      // Android / Chromium / Desktop beforeinstallprompt
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        btnInstall.style.display = 'inline-flex';
+      });
+
+      btnInstall.addEventListener('click', async () => {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          const { outcome } = await deferredInstallPrompt.userChoice;
+          if (outcome === 'accepted') {
+            console.log('[TierCraft PWA] Usuário aceitou a instalação.');
+            btnInstall.style.display = 'none';
+          }
+          deferredInstallPrompt = null;
+        } else if (!isIOS) {
+          // If clicked and not iOS and no prompt captured
+          showNotificationToast('Para instalar, clique no menu do navegador e selecione "Instalar aplicativo" ou "Adicionar à Tela Inicial".', 4500);
+        }
+      });
+
+      // Successfully installed event
+      window.addEventListener('appinstalled', () => {
+        console.log('[TierCraft PWA] Aplicativo instalado com sucesso!');
+        btnInstall.style.display = 'none';
+        deferredInstallPrompt = null;
+        showNotificationToast('🎉 TierCraft instalado com sucesso! Acesse direto da sua tela inicial.');
+      });
+    }
+  }
+
+  // ==========================================
+  // THEME & TYPOGRAPHY MANAGER ENGINE
+  // ==========================================
+
+  function applyTheme(themeConfig, notify = false) {
+    if (!themeConfig) return;
+    const themeId = themeConfig.id || 'dark';
+    const fontName = themeConfig.font || 'Outfit';
+    const preset = THEME_PRESETS[themeId] || THEME_PRESETS['dark'];
+
+    // 1. Set data-theme attribute on root
+    document.documentElement.setAttribute('data-theme', themeId);
+
+    // 2. Clear or set custom inline color overrides
+    const docStyle = document.documentElement.style;
+    if (themeId === 'custom' && themeConfig.customColors) {
+      const colors = themeConfig.customColors;
+      if (colors.bgDark) docStyle.setProperty('--bg-dark', colors.bgDark);
+      if (colors.bgCard) docStyle.setProperty('--bg-card', colors.bgCard);
+      if (colors.accentPrimary) docStyle.setProperty('--accent-primary', colors.accentPrimary);
+      if (colors.textMain) docStyle.setProperty('--text-main', colors.textMain);
+
+      // Derived properties for custom theme
+      docStyle.setProperty('--tier-board-bg', colors.bgDark);
+      docStyle.setProperty('--tier-row-bg', colors.bgCard);
+      docStyle.setProperty('--modal-footer-bg', colors.bgDark);
+
+      // Update custom card preview in modal
+      const customBgDot = document.getElementById('preview-dot-custom-bg');
+      const customCardDot = document.getElementById('preview-dot-custom-card');
+      const customAccentDot = document.getElementById('preview-dot-custom-accent');
+      if (customBgDot) customBgDot.style.background = colors.bgDark;
+      if (customCardDot) customCardDot.style.background = colors.bgCard;
+      if (customAccentDot) customAccentDot.style.background = colors.accentPrimary;
+    } else {
+      // For preset themes, remove inline color overrides so CSS preset variables take effect
+      docStyle.removeProperty('--bg-dark');
+      docStyle.removeProperty('--bg-card');
+      docStyle.removeProperty('--accent-primary');
+      docStyle.removeProperty('--text-main');
+      docStyle.removeProperty('--tier-board-bg');
+      docStyle.removeProperty('--tier-row-bg');
+      docStyle.removeProperty('--modal-footer-bg');
+    }
+
+    // 3. Apply font
+    const fontCss = FONT_MAP[fontName] || FONT_MAP['Outfit'];
+    docStyle.setProperty('--font-main', fontCss);
+    docStyle.setProperty('--font-body', fontCss);
+
+    // 4. Update meta theme-color tag for mobile PWA status bar
+    if (metaThemeColor) {
+      const activeBg = (themeId === 'custom' && themeConfig.customColors)
+        ? themeConfig.customColors.bgDark
+        : (preset.colors ? preset.colors.bgDark : '#0b0d14');
+      metaThemeColor.setAttribute('content', activeBg);
+    }
+
+    // 5. Update header button icon & label
+    if (themeBtnIcon) themeBtnIcon.textContent = preset.icon || '🎨';
+    if (themeBtnLabel) themeBtnLabel.textContent = preset.name || 'Tema';
+
+    // 6. Update active UI classes inside Theme Modal
+    updateThemeModalUI(themeConfig);
+
+    // 7. Persist to state and localStorage
+    state.theme = themeConfig;
+    saveState();
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeConfig));
+    } catch (e) {
+      console.warn('Erro ao salvar tema no localStorage:', e);
+    }
+
+    // 8. Notification feedback if requested
+    if (notify) {
+      showNotificationToast(`🎨 Tema "${preset.name}" (${fontName}) ativado!`);
+      playSynthSound('pop');
+    }
+  }
+
+  function updateThemeModalUI(themeConfig) {
+    if (!modalTheme) return;
+    const themeId = themeConfig.id || 'dark';
+    const fontName = themeConfig.font || 'Outfit';
+
+    // Highlight active preset card
+    document.querySelectorAll('.theme-card').forEach(card => {
+      card.classList.toggle('active', card.dataset.themeId === themeId);
+    });
+
+    // Highlight active font chip
+    document.querySelectorAll('.font-chip').forEach(chip => {
+      chip.classList.toggle('active', chip.dataset.font === fontName);
+    });
+
+    // Update live font sample
+    if (fontLivePreview) {
+      const fontCss = FONT_MAP[fontName] || FONT_MAP['Outfit'];
+      fontLivePreview.style.fontFamily = fontCss;
+      fontLivePreview.textContent = `Fonte ${fontName}: O rápido gavião voa sobre as montanhas • TierCraft 2026`;
+    }
+
+    // Populate custom color pickers with current custom colors (or active preset colors)
+    const customColors = themeConfig.customColors || (THEME_PRESETS[themeId] ? THEME_PRESETS[themeId].colors : DEFAULT_THEME.customColors);
+    if (customColorBg) {
+      customColorBg.value = customColors.bgDark || '#0b0d14';
+      if (hexValBg) hexValBg.textContent = customColorBg.value;
+    }
+    if (customColorCard) {
+      customColorCard.value = customColors.bgCard || '#131722';
+      if (hexValCard) hexValCard.textContent = customColorCard.value;
+    }
+    if (customColorAccent) {
+      customColorAccent.value = customColors.accentPrimary || '#6366f1';
+      if (hexValAccent) hexValAccent.textContent = customColorAccent.value;
+    }
+    if (customColorText) {
+      customColorText.value = customColors.textMain || '#f8fafc';
+      if (hexValText) hexValText.textContent = customColorText.value;
+    }
+  }
+
+  function handleUrlActions() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const action = params.get('action');
+      if (action === 'new') {
+        const modalNewList = document.getElementById('modal-new-list');
+        if (modalNewList) openModal(modalNewList);
+      } else if (action === 'focus' || action === 'presentation') {
+        toggleFocusMode(true);
+      } else if (action === 'ai' || action === 'import-ai') {
+        openAiImportModal();
+      } else if (action === 'theme') {
+        updateThemeModalUI(state.theme || DEFAULT_THEME);
+        openModal(modalTheme);
+      }
+    } catch (e) {
+      console.warn('Erro ao processar URL actions:', e);
+    }
+  }
 
   // ==========================================
   // INITIALIZATION & STATE PERSISTENCE
@@ -150,6 +528,9 @@
   function init() {
     loadState();
     setupEventListeners();
+    setupPWA();
+    initAiPromptPreview();
+    handleUrlActions();
     renderApp();
   }
 
@@ -162,8 +543,25 @@
           state = parsed;
         }
       }
+
+      // Ensure state.theme exists and is valid
+      if (!state.theme) {
+        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        if (savedTheme) {
+          try {
+            state.theme = JSON.parse(savedTheme);
+          } catch (err) {
+            state.theme = JSON.parse(JSON.stringify(DEFAULT_THEME));
+          }
+        } else {
+          state.theme = JSON.parse(JSON.stringify(DEFAULT_THEME));
+        }
+      }
+      applyTheme(state.theme, false);
     } catch (e) {
       console.warn('Erro ao carregar dados do localStorage:', e);
+      state.theme = JSON.parse(JSON.stringify(DEFAULT_THEME));
+      applyTheme(state.theme, false);
     }
   }
 
@@ -352,6 +750,13 @@
       const img = document.createElement('img');
       img.src = item.src;
       img.alt = item.label || 'Item';
+      img.onerror = () => {
+        img.style.display = 'none';
+        el.classList.add('text-item-style');
+        el.style.backgroundColor = '#334155';
+        el.style.color = '#f8fafc';
+        el.textContent = item.label || 'Sem Foto';
+      };
       el.appendChild(img);
 
       if (item.label) {
@@ -393,8 +798,8 @@
     hoverActions.appendChild(btnDelete);
     el.appendChild(hoverActions);
 
-    // Attach Drag Events
-    attachItemDragEvents(el);
+    // Attach Drag Events and Click/Tap Handlers
+    attachItemDragEvents(el, item);
 
     return el;
   }
@@ -403,7 +808,7 @@
   // DRAG AND DROP ENGINE (HTML5 + TOUCH)
   // ==========================================
 
-  function attachItemDragEvents(itemEl) {
+  function attachItemDragEvents(itemEl, item) {
     itemEl.addEventListener('dragstart', (e) => {
       draggedItemId = itemEl.dataset.itemId;
       itemEl.classList.add('dragging');
@@ -417,11 +822,19 @@
       document.querySelectorAll('.dropzone').forEach(dz => dz.classList.remove('drag-over'));
     });
 
-    // Touch Support for Mobile
+    // Touch Support for Mobile & Tablets
     itemEl.addEventListener('touchstart', (e) => {
       if (e.target.closest('.item-actions-hover')) return;
-      handleTouchStart(e);
-    }, { passive: false });
+      handleTouchStart(e, item);
+    }, { passive: true });
+
+    // Click handler for Desktop or when tap occurs without touch
+    itemEl.addEventListener('click', (e) => {
+      if (e.target.closest('.item-actions-hover')) return;
+      if (!isDraggingTouch && item) {
+        openQuickItemModal(item);
+      }
+    });
   }
 
   function attachDropzoneListeners(dropzoneEl) {
@@ -450,34 +863,67 @@
   }
 
   // Mobile Touch Drag Helpers
-  function handleTouchStart(e) {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  let isDraggingTouch = false;
+  let currentTouchItem = null;
+
+  function handleTouchStart(e, item) {
     const touch = e.touches[0];
     touchDragElement = e.currentTarget;
     draggedItemId = touchDragElement.dataset.itemId;
+    currentTouchItem = item;
 
-    // Create visual clone following touch pointer
-    touchClone = touchDragElement.cloneNode(true);
-    touchClone.style.position = 'fixed';
-    touchClone.style.pointerEvents = 'none';
-    touchClone.style.zIndex = '9999';
-    touchClone.style.opacity = '0.85';
-    touchClone.style.transform = 'scale(1.1)';
-    touchClone.style.left = `${touch.clientX - 40}px`;
-    touchClone.style.top = `${touch.clientY - 40}px`;
-    document.body.appendChild(touchClone);
-
-    touchDragElement.classList.add('dragging');
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
+    isDraggingTouch = false;
 
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchcancel', handleTouchCancel);
   }
 
   function handleTouchMove(e) {
-    if (!touchClone) return;
-    e.preventDefault(); // Prevent scrolling while dragging
     const touch = e.touches[0];
-    touchClone.style.left = `${touch.clientX - 40}px`;
-    touchClone.style.top = `${touch.clientY - 40}px`;
+    const distX = touch.clientX - touchStartX;
+    const distY = touch.clientY - touchStartY;
+    const distance = Math.hypot(distX, distY);
+
+    if (!isDraggingTouch) {
+      if (distance > 8) {
+        isDraggingTouch = true;
+        if (touchDragElement) {
+          touchDragElement.classList.add('dragging');
+          touchClone = touchDragElement.cloneNode(true);
+          touchClone.style.position = 'fixed';
+          touchClone.style.pointerEvents = 'none';
+          touchClone.style.zIndex = '9999';
+          touchClone.style.opacity = '0.9';
+          touchClone.style.transform = 'scale(1.1)';
+          touchClone.style.left = `${touch.clientX - 32}px`;
+          touchClone.style.top = `${touch.clientY - 32}px`;
+          document.body.appendChild(touchClone);
+        }
+      } else {
+        return;
+      }
+    }
+
+    e.preventDefault(); // Prevent scrolling once drag is active
+
+    if (touchClone) {
+      touchClone.style.left = `${touch.clientX - 32}px`;
+      touchClone.style.top = `${touch.clientY - 32}px`;
+    }
+
+    // Auto-scroll viewport if near top/bottom edges
+    if (touch.clientY < 70) {
+      window.scrollBy(0, -12);
+    } else if (touch.clientY > window.innerHeight - 70) {
+      window.scrollBy(0, 12);
+    }
 
     // Highlight hovered dropzone
     const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -489,6 +935,44 @@
   }
 
   function handleTouchEnd(e) {
+    window.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('touchend', handleTouchEnd);
+    window.removeEventListener('touchcancel', handleTouchCancel);
+
+    if (isDraggingTouch) {
+      if (touchClone) {
+        touchClone.remove();
+        touchClone = null;
+      }
+      if (touchDragElement) {
+        touchDragElement.classList.remove('dragging');
+      }
+
+      const touch = e.changedTouches[0];
+      const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+      const dropzone = targetEl ? targetEl.closest('.dropzone') : null;
+
+      if (dropzone && draggedItemId) {
+        const targetRowId = dropzone.dataset.rowId;
+        moveItemToRow(draggedItemId, targetRowId);
+      }
+
+      document.querySelectorAll('.dropzone').forEach(dz => dz.classList.remove('drag-over'));
+    } else {
+      // It was a tap (quick touch without dragging)
+      const duration = Date.now() - touchStartTime;
+      if (duration < 450 && currentTouchItem) {
+        openQuickItemModal(currentTouchItem);
+      }
+    }
+
+    touchDragElement = null;
+    draggedItemId = null;
+    currentTouchItem = null;
+    isDraggingTouch = false;
+  }
+
+  function handleTouchCancel() {
     if (touchClone) {
       touchClone.remove();
       touchClone = null;
@@ -496,21 +980,117 @@
     if (touchDragElement) {
       touchDragElement.classList.remove('dragging');
     }
-
-    const touch = e.changedTouches[0];
-    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-    const dropzone = targetEl ? targetEl.closest('.dropzone') : null;
-
-    if (dropzone && draggedItemId) {
-      const targetRowId = dropzone.dataset.rowId;
-      moveItemToRow(draggedItemId, targetRowId);
-    }
-
     document.querySelectorAll('.dropzone').forEach(dz => dz.classList.remove('drag-over'));
     window.removeEventListener('touchmove', handleTouchMove);
     window.removeEventListener('touchend', handleTouchEnd);
+    window.removeEventListener('touchcancel', handleTouchCancel);
     touchDragElement = null;
     draggedItemId = null;
+    currentTouchItem = null;
+    isDraggingTouch = false;
+  }
+
+  // ==========================================
+  // QUICK ITEM ACTION MODAL (MOBILE / TABLET)
+  // ==========================================
+
+  const modalQuickItem = document.getElementById('modal-quick-item');
+  const quickItemTitle = document.getElementById('quick-item-title');
+  const quickItemThumb = document.getElementById('quick-item-thumb-preview');
+  const quickItemLocation = document.getElementById('quick-item-current-location');
+  const quickMoveButtons = document.getElementById('quick-move-buttons');
+  const btnQuickEditItem = document.getElementById('btn-quick-edit-item');
+  const btnQuickDeleteItem = document.getElementById('btn-quick-delete-item');
+
+  function openQuickItemModal(item) {
+    if (!modalQuickItem || !item) return;
+    const list = getActiveList();
+    if (!list) return;
+
+    // Set title & thumbnail preview
+    quickItemTitle.textContent = item.type === 'text' ? (item.text || 'Texto') : (item.label || 'Foto');
+    quickItemThumb.innerHTML = '';
+    if (item.type === 'image') {
+      const img = document.createElement('img');
+      img.src = item.src;
+      img.alt = item.label || 'Item';
+      img.onerror = () => {
+        img.style.display = 'none';
+        quickItemThumb.textContent = item.label || 'Sem Foto';
+      };
+      quickItemThumb.appendChild(img);
+    } else {
+      const textCard = document.createElement('div');
+      textCard.className = 'quick-thumb-text';
+      textCard.style.backgroundColor = item.bgColor || '#2a2d3d';
+      textCard.style.color = item.textColor || '#ffffff';
+      textCard.textContent = item.text || 'T';
+      quickItemThumb.appendChild(textCard);
+    }
+
+    // Determine current location
+    let currentRowId = 'unranked';
+    let currentLabel = 'Banco de Itens';
+    list.rows.forEach(r => {
+      if (r.items.some(i => i.id === item.id)) {
+        currentRowId = r.id;
+        currentLabel = `Fileira ${r.label}`;
+      }
+    });
+    quickItemLocation.textContent = `Local atual: ${currentLabel}`;
+
+    // Populate quick move buttons
+    quickMoveButtons.innerHTML = '';
+
+    // Button for each row
+    list.rows.forEach(row => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const isCurrent = (currentRowId === row.id);
+      btn.className = `btn-quick-target ${isCurrent ? 'active' : ''}`;
+      btn.style.setProperty('--target-color', row.color || '#ff4757');
+      btn.innerHTML = `
+        <span class="target-badge" style="background:${row.color}">${row.label}</span>
+        <span class="target-name">${row.label}</span>
+        ${isCurrent ? '<span class="target-check">✓</span>' : ''}
+      `;
+      btn.onclick = () => {
+        moveItemToRow(item.id, row.id);
+        closeModal(modalQuickItem);
+      };
+      quickMoveButtons.appendChild(btn);
+    });
+
+    // Button for unranked items bank
+    const btnBank = document.createElement('button');
+    btnBank.type = 'button';
+    const isBank = (currentRowId === 'unranked');
+    btnBank.className = `btn-quick-target ${isBank ? 'active' : ''}`;
+    btnBank.style.setProperty('--target-color', '#6366f1');
+    btnBank.innerHTML = `
+      <span class="target-badge" style="background:#4b5563">📦</span>
+      <span class="target-name">Banco de Itens</span>
+      ${isBank ? '<span class="target-check">✓</span>' : ''}
+    `;
+    btnBank.onclick = () => {
+      moveItemToRow(item.id, 'unranked');
+      closeModal(modalQuickItem);
+    };
+    quickMoveButtons.appendChild(btnBank);
+
+    // Edit button action
+    btnQuickEditItem.onclick = () => {
+      closeModal(modalQuickItem);
+      openEditItemModal(item);
+    };
+
+    // Delete button action
+    btnQuickDeleteItem.onclick = () => {
+      closeModal(modalQuickItem);
+      deleteItem(item.id);
+    };
+
+    openModal(modalQuickItem);
   }
 
   // State item mover logic
@@ -667,6 +1247,15 @@
     renderApp();
   }
 
+  function updateModalRowMoveButtons(rowId) {
+    const list = getActiveList();
+    const index = list.rows.findIndex(r => r.id === rowId);
+    const btnUp = document.getElementById('btn-modal-row-up');
+    const btnDown = document.getElementById('btn-modal-row-down');
+    if (btnUp) btnUp.disabled = (index <= 0);
+    if (btnDown) btnDown.disabled = (index >= list.rows.length - 1 || index === -1);
+  }
+
   function openEditRowModal(row) {
     editRowId.value = row.id;
     rowLabelInput.value = row.label;
@@ -683,6 +1272,7 @@
       }
     });
 
+    updateModalRowMoveButtons(row.id);
     openModal(modalRow);
   }
 
@@ -722,8 +1312,9 @@
   }
 
   function selectItemTab(tabId) {
-    tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
-    tabContents.forEach(content => content.classList.toggle('active', content.id === tabId));
+    if (!modalItem) return;
+    modalItem.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
+    modalItem.querySelectorAll('.tab-content').forEach(content => content.classList.toggle('active', content.id === tabId));
   }
 
   function openNewItemModal() {
@@ -758,7 +1349,7 @@
   }
 
   function handleSaveItem() {
-    const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+    const activeTab = modalItem ? (modalItem.querySelector('.tab-btn.active')?.dataset.tab || 'tab-image') : 'tab-image';
     const list = getActiveList();
     const itemBeingEdited = editingItemId ? findItemById(editingItemId) : null;
 
@@ -902,6 +1493,7 @@
   // ==========================================
 
   function exportBackup() {
+    state.theme = state.theme || JSON.parse(JSON.stringify(DEFAULT_THEME));
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
     const downloadAnchor = document.createElement('a');
     const filename = `tiercraft-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -917,15 +1509,384 @@
       const parsed = JSON.parse(jsonString);
       if (parsed && parsed.tierLists) {
         state = parsed;
+        if (parsed.theme) {
+          applyTheme(parsed.theme, true);
+        } else {
+          // If the backup doesn't specify a theme, maintain current theme
+          state.theme = state.theme || JSON.parse(JSON.stringify(DEFAULT_THEME));
+          applyTheme(state.theme, false);
+        }
         saveState();
         renderApp();
-        alert('Backup importado com sucesso!');
+        showNotificationToast('📦 Backup e tema restaurados com sucesso!');
         closeModal(modalBackup);
       } else {
         alert('Arquivo JSON inválido. Estrutura incorreta.');
       }
     } catch (e) {
       alert('Erro ao processar arquivo JSON: ' + e.message);
+    }
+  }
+
+  // ==========================================
+  // SINGLE TIERLIST AI IMPORT & PROMPT ENGINE
+  // ==========================================
+
+  const AI_PROMPT_TEMPLATE = `Atue como um especialista e crie uma Tier List completa em formato JSON válido para o aplicativo TierCraft sobre o seguinte tema: [DIGITE SEU TEMA AQUI, EX: "Melhores Jogos de RPG de Todos os Tempos", "Melhores Animes Shonen dos Anos 2000", "Carros Esportivos Mais Marcantes", etc.].
+
+Retorne EXCLUSIVAMENTE o código JSON puro (sem explicações antes ou depois), seguindo a estrutura abaixo:
+
+{
+  "title": "Nome da Tier List",
+  "description": "Breve descrição contextualizando a classificação",
+  "defaultSoundId": "swoosh",
+  "rows": [
+    {
+      "label": "S",
+      "color": "#ff4757",
+      "items": [
+        {
+          "type": "image",
+          "label": "Nome do Item 1",
+          "src": "https://url-direta-da-imagem.jpg"
+        },
+        {
+          "type": "text",
+          "text": "Nome do Item 2",
+          "bgColor": "#ff4757",
+          "textColor": "#ffffff"
+        }
+      ]
+    },
+    {
+      "label": "A",
+      "color": "#ffa502",
+      "items": []
+    },
+    {
+      "label": "B",
+      "color": "#eccc68",
+      "items": []
+    },
+    {
+      "label": "C",
+      "color": "#2ed573",
+      "items": []
+    },
+    {
+      "label": "D",
+      "color": "#1e90ff",
+      "items": []
+    }
+  ],
+  "unrankedItems": [
+    {
+      "type": "image",
+      "label": "Item no Banco de Itens",
+      "src": "https://url-direta-da-imagem.jpg"
+    },
+    {
+      "type": "text",
+      "text": "Outro Item",
+      "bgColor": "#6366f1",
+      "textColor": "#ffffff"
+    }
+  ]
+}
+
+Regras obrigatórias:
+1. Você pode definir a quantidade de fileiras (rows) e os nomes mais adequados ao tema (ex: S, A, B, C, D ou "Obra-prima", "Excelente", "Bom", "Mediano", "Ruim").
+2. Cores hexadecimais sugeridas para as fileiras: #ff4757, #ffa502, #eccc68, #2ed573, #1e90ff, #9b59b6, #ec4899, #718093.
+3. Efeitos sonoros suportados (soundId): "swoosh", "pop", "achievement", "sparkle", "impact", "fail", "applause", "none".
+4. Itens do tipo "image" devem ter "src" (URL direta acessível da web) e "label" (rótulo descritivo).
+5. Itens do tipo "text" devem ter "text" com o nome, e opcionais "bgColor" e "textColor".
+6. Os itens podem vir previamente distribuídos nas fileiras (em rows.items) ou agrupados em "unrankedItems" para o usuário classificar manualmente.`;
+
+  const AI_JSON_EXAMPLE = `{
+  "title": "Melhores Jogos da Década",
+  "description": "Ranking dos maiores lançamentos dos videogames dos últimos 10 anos.",
+  "defaultSoundId": "achievement",
+  "rows": [
+    {
+      "label": "Obra-Prima (S)",
+      "color": "#ff4757",
+      "items": [
+        {
+          "type": "image",
+          "label": "The Witcher 3",
+          "src": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300"
+        },
+        {
+          "type": "text",
+          "text": "Chrono Trigger",
+          "bgColor": "#ff4757",
+          "textColor": "#ffffff"
+        }
+      ]
+    },
+    {
+      "label": "Excelente (A)",
+      "color": "#ffa502",
+      "items": [
+        {
+          "type": "text",
+          "text": "Red Dead Redemption 2",
+          "bgColor": "#ffa502",
+          "textColor": "#ffffff"
+        }
+      ]
+    },
+    {
+      "label": "Muito Bom (B)",
+      "color": "#eccc68",
+      "items": []
+    },
+    {
+      "label": "Bom (C)",
+      "color": "#2ed573",
+      "items": []
+    }
+  ],
+  "unrankedItems": [
+    {
+      "type": "image",
+      "label": "Elden Ring",
+      "src": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300"
+    },
+    {
+      "type": "text",
+      "text": "Cyberpunk 2077",
+      "bgColor": "#6366f1",
+      "textColor": "#ffffff"
+    }
+  ]
+}`;
+
+  function importSingleTierListJSON(rawInput) {
+    if (!rawInput || !rawInput.trim()) {
+      showImportError('Por favor, cole um código JSON ou selecione um arquivo válido.');
+      return false;
+    }
+
+    let cleaned = rawInput.trim();
+    // Remove markdown code fences if present
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```[a-zA-Z]*\n?/, '').replace(/```\s*$/, '').trim();
+    }
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (err) {
+      showImportError('Erro de formatação JSON: ' + err.message + '. Certifique-se de que o código copiado está completo.');
+      return false;
+    }
+
+    // Normalize incoming data into a list of tier lists to append
+    let listsToImport = [];
+
+    if (parsed && typeof parsed === 'object') {
+      if (parsed.tierLists && typeof parsed.tierLists === 'object') {
+        // Full backup file: import all lists without wiping existing ones
+        listsToImport = Object.values(parsed.tierLists);
+      } else if (Array.isArray(parsed)) {
+        // Array of tier lists
+        listsToImport = parsed;
+      } else if (parsed.tierList && typeof parsed.tierList === 'object') {
+        listsToImport = [parsed.tierList];
+      } else if (parsed.data && typeof parsed.data === 'object' && (parsed.data.rows || parsed.data.title)) {
+        listsToImport = [parsed.data];
+      } else if (parsed.title || parsed.rows || parsed.unrankedItems) {
+        // Single tier list object
+        listsToImport = [parsed];
+      }
+    }
+
+    if (!listsToImport || listsToImport.length === 0) {
+      showImportError('Estrutura não reconhecida. O JSON deve possuir ao menos os campos "title" ou "rows".');
+      return false;
+    }
+
+    const presetPalette = ['#ff4757', '#ffa502', '#eccc68', '#2ed573', '#1e90ff', '#9b59b6', '#ec4899', '#718093'];
+    let lastAddedId = null;
+    let importedCount = 0;
+
+    listsToImport.forEach((rawList, listIdx) => {
+      if (!rawList || typeof rawList !== 'object') return;
+
+      const newId = 'list-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+      const title = (rawList.title || rawList.name || `Nova Tier List IA ${state ? Object.keys(state.tierLists).length + 1 : 1}`).trim();
+      const description = (rawList.description || rawList.desc || 'Tier List criada via inteligência artificial').trim();
+      const defaultSoundId = (rawList.defaultSoundId && SOUND_LIBRARY[rawList.defaultSoundId]) ? rawList.defaultSoundId : 'swoosh';
+
+      // Rows sanitization
+      let sanitizedRows = [];
+      const incomingRows = Array.isArray(rawList.rows) ? rawList.rows : [];
+
+      if (incomingRows.length > 0) {
+        sanitizedRows = incomingRows.map((r, rIdx) => {
+          const rowId = (r.id ? String(r.id) : '') || ('row-' + Date.now() + '-' + rIdx + '-' + Math.random().toString(36).substr(2, 4));
+          const label = String(r.label || r.name || r.title || `Tier ${rIdx + 1}`).trim();
+          const color = (r.color || presetPalette[rIdx % presetPalette.length]).trim();
+          const soundId = r.soundId || 'default';
+
+          const sanitizedItems = [];
+          const incomingItems = Array.isArray(r.items) ? r.items : [];
+          incomingItems.forEach((it, itIdx) => {
+            const itemObj = sanitizeItemObject(it, itIdx);
+            if (itemObj) sanitizedItems.push(itemObj);
+          });
+
+          return {
+            id: rowId,
+            label: label,
+            color: color,
+            soundId: soundId,
+            items: sanitizedItems
+          };
+        });
+      } else {
+        // Fallback to standard preset
+        sanitizedRows = JSON.parse(JSON.stringify(PRESETS.standard));
+      }
+
+      // Unranked items sanitization
+      const sanitizedUnranked = [];
+      const incomingUnranked = Array.isArray(rawList.unrankedItems) ? rawList.unrankedItems : (Array.isArray(rawList.items) ? rawList.items : []);
+      incomingUnranked.forEach((it, itIdx) => {
+        const itemObj = sanitizeItemObject(it, itIdx);
+        if (itemObj) sanitizedUnranked.push(itemObj);
+      });
+
+      // Append to state WITHOUT overwriting existing lists!
+      state.tierLists[newId] = {
+        id: newId,
+        title: title,
+        description: description,
+        defaultSoundId: defaultSoundId,
+        rows: sanitizedRows,
+        unrankedItems: sanitizedUnranked
+      };
+
+      lastAddedId = newId;
+      importedCount++;
+    });
+
+    if (importedCount === 0) {
+      showImportError('Não foi possível identificar nenhuma Tier List válida no arquivo.');
+      return false;
+    }
+
+    // Set as active tier list
+    if (lastAddedId) {
+      state.activeTierListId = lastAddedId;
+    }
+
+    saveState();
+    renderApp();
+    playSynthSound('achievement');
+
+    const firstListTitle = state.tierLists[lastAddedId].title;
+    showNotificationToast(`✨ Tier List "${firstListTitle}" importada com sucesso! (${importedCount} lista${importedCount > 1 ? 's' : ''})`);
+
+    hideImportError();
+    if (aiJsonInput) aiJsonInput.value = '';
+    if (inputImportSingleJson) inputImportSingleJson.value = '';
+    closeModal(modalImportAi);
+
+    return true;
+  }
+
+  function sanitizeItemObject(it, fallbackIndex) {
+    if (!it) return null;
+    const itemId = (it.id ? String(it.id) : '') || ('item-' + Date.now() + '-' + fallbackIndex + '-' + Math.random().toString(36).substr(2, 6));
+
+    if (typeof it === 'string') {
+      return {
+        id: itemId,
+        type: 'text',
+        text: it,
+        bgColor: '#2a2d3d',
+        textColor: '#ffffff'
+      };
+    }
+
+    const type = it.type || ((it.src || it.url || it.image) ? 'image' : 'text');
+
+    if (type === 'image') {
+      const src = it.src || it.url || it.image || '';
+      const label = it.label || it.name || it.title || '';
+      if (!src && !label) return null;
+      return {
+        id: itemId,
+        type: 'image',
+        src: src,
+        label: label
+      };
+    } else {
+      const text = it.text || it.label || it.name || it.title || 'Item';
+      return {
+        id: itemId,
+        type: 'text',
+        text: text,
+        bgColor: it.bgColor || it.bg_color || '#2a2d3d',
+        textColor: it.textColor || it.text_color || '#ffffff'
+      };
+    }
+  }
+
+  function showImportError(msg) {
+    if (importJsonError) {
+      importJsonError.textContent = msg;
+      importJsonError.style.display = 'block';
+    } else {
+      alert(msg);
+    }
+  }
+
+  function hideImportError() {
+    if (importJsonError) {
+      importJsonError.style.display = 'none';
+      importJsonError.textContent = '';
+    }
+  }
+
+  function selectAiModalTab(tabId) {
+    if (!modalImportAi) return;
+    modalImportAi.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
+    modalImportAi.querySelectorAll('.tab-content').forEach(content => content.classList.toggle('active', content.id === tabId));
+  }
+
+  function initAiPromptPreview() {
+    if (aiPromptTemplateEl) aiPromptTemplateEl.textContent = AI_PROMPT_TEMPLATE;
+    if (aiJsonExampleEl) aiJsonExampleEl.textContent = AI_JSON_EXAMPLE;
+  }
+
+  function openAiImportModal() {
+    hideImportError();
+    if (aiJsonInput) aiJsonInput.value = '';
+    if (inputImportSingleJson) inputImportSingleJson.value = '';
+    selectAiModalTab('tab-import-json');
+    initAiPromptPreview();
+    openModal(modalImportAi);
+  }
+
+  function fallbackCopy(text, callback) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      ta.style.top = '-9999px';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (callback) callback();
+    } catch (err) {
+      alert('Não foi possível copiar automaticamente. Selecione o modelo manualmente.');
     }
   }
 
@@ -1145,11 +2106,13 @@
     searchItemsInput.addEventListener('input', () => renderUnrankedItems(getActiveList()));
 
     // Tabs inside Add Item Modal
-    tabButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        selectItemTab(btn.dataset.tab);
+    if (modalItem) {
+      modalItem.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectItemTab(btn.dataset.tab);
+        });
       });
-    });
+    }
 
     // File drop area inside modal
     fileDropArea.addEventListener('click', () => itemImageFile.click());
@@ -1227,6 +2190,33 @@
       });
     }
 
+    const btnModalRowUp = document.getElementById('btn-modal-row-up');
+    const btnModalRowDown = document.getElementById('btn-modal-row-down');
+
+    if (btnModalRowUp) {
+      btnModalRowUp.addEventListener('click', () => {
+        const list = getActiveList();
+        const rowId = editRowId.value;
+        const index = list.rows.findIndex(r => r.id === rowId);
+        if (index > 0) {
+          moveRow(index, -1);
+          updateModalRowMoveButtons(rowId);
+        }
+      });
+    }
+
+    if (btnModalRowDown) {
+      btnModalRowDown.addEventListener('click', () => {
+        const list = getActiveList();
+        const rowId = editRowId.value;
+        const index = list.rows.findIndex(r => r.id === rowId);
+        if (index >= 0 && index < list.rows.length - 1) {
+          moveRow(index, 1);
+          updateModalRowMoveButtons(rowId);
+        }
+      });
+    }
+
     btnDeleteRow.addEventListener('click', () => {
       const list = getActiveList();
       const row = list.rows.find(r => r.id === editRowId.value);
@@ -1279,6 +2269,158 @@
       if (txt) importBackupJSON(txt);
     });
 
+    // AI Tier List Import Actions
+    if (btnHeaderAiImport) {
+      btnHeaderAiImport.addEventListener('click', openAiImportModal);
+    }
+    if (btnImportAiList) {
+      btnImportAiList.addEventListener('click', openAiImportModal);
+    }
+    if (btnSwitchToAiImport) {
+      btnSwitchToAiImport.addEventListener('click', () => {
+        closeModal(modalBackup);
+        openAiImportModal();
+      });
+    }
+
+    // AI Import Modal Tabs
+    if (modalImportAi) {
+      modalImportAi.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectAiModalTab(btn.dataset.tab);
+        });
+      });
+    }
+
+    // AI Import Modal Copy Prompt Button
+    if (btnCopyAiPrompt) {
+      btnCopyAiPrompt.addEventListener('click', () => {
+        const textToCopy = AI_PROMPT_TEMPLATE;
+        const copySuccess = () => {
+          const copyIcon = document.getElementById('copy-btn-icon');
+          const copyText = document.getElementById('copy-btn-text');
+          if (copyIcon) copyIcon.textContent = '✓';
+          if (copyText) copyText.textContent = 'Copiado!';
+          btnCopyAiPrompt.classList.add('btn-emerald');
+          showNotificationToast('📋 Prompt copiado para a área de transferência!');
+          setTimeout(() => {
+            if (copyIcon) copyIcon.textContent = '📋';
+            if (copyText) copyText.textContent = 'Copiar Prompt';
+            btnCopyAiPrompt.classList.remove('btn-emerald');
+          }, 2500);
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(textToCopy).then(copySuccess).catch(() => {
+            fallbackCopy(textToCopy, copySuccess);
+          });
+        } else {
+          fallbackCopy(textToCopy, copySuccess);
+        }
+      });
+    }
+
+    // AI Import File Upload
+    if (inputImportSingleJson) {
+      inputImportSingleJson.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            const content = evt.target.result;
+            if (aiJsonInput) aiJsonInput.value = content;
+            importSingleTierListJSON(content);
+          };
+          reader.onerror = () => {
+            showImportError('Erro ao ler o arquivo JSON selecionado.');
+          };
+          reader.readAsText(file);
+        }
+      });
+    }
+
+    // AI Import Confirm Action
+    if (btnConfirmImportSingle) {
+      btnConfirmImportSingle.addEventListener('click', () => {
+        const rawContent = aiJsonInput ? aiJsonInput.value : '';
+        importSingleTierListJSON(rawContent);
+      });
+    }
+
+    // Theme & Typography Manager Listeners
+    if (btnThemeModal) {
+      btnThemeModal.addEventListener('click', () => {
+        updateThemeModalUI(state.theme || DEFAULT_THEME);
+        openModal(modalTheme);
+      });
+    }
+
+    // Theme Preset Cards
+    document.querySelectorAll('.theme-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const selectedId = card.dataset.themeId;
+        const currentTheme = state.theme || JSON.parse(JSON.stringify(DEFAULT_THEME));
+        currentTheme.id = selectedId;
+        applyTheme(currentTheme, true);
+      });
+    });
+
+    // Font selection chips
+    document.querySelectorAll('.font-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const selectedFont = chip.dataset.font;
+        const currentTheme = state.theme || JSON.parse(JSON.stringify(DEFAULT_THEME));
+        currentTheme.font = selectedFont;
+        applyTheme(currentTheme, true);
+      });
+    });
+
+    // Live hex labels for custom color pickers
+    if (customColorBg) {
+      customColorBg.addEventListener('input', () => {
+        if (hexValBg) hexValBg.textContent = customColorBg.value;
+      });
+    }
+    if (customColorCard) {
+      customColorCard.addEventListener('input', () => {
+        if (hexValCard) hexValCard.textContent = customColorCard.value;
+      });
+    }
+    if (customColorAccent) {
+      customColorAccent.addEventListener('input', () => {
+        if (hexValAccent) hexValAccent.textContent = customColorAccent.value;
+      });
+    }
+    if (customColorText) {
+      customColorText.addEventListener('input', () => {
+        if (hexValText) hexValText.textContent = customColorText.value;
+      });
+    }
+
+    // Save Custom Theme Button
+    if (btnApplyCustomColors) {
+      btnApplyCustomColors.addEventListener('click', () => {
+        const currentTheme = state.theme || JSON.parse(JSON.stringify(DEFAULT_THEME));
+        currentTheme.id = 'custom';
+        currentTheme.customColors = {
+          bgDark: customColorBg.value,
+          bgCard: customColorCard.value,
+          accentPrimary: customColorAccent.value,
+          textMain: customColorText.value
+        };
+        applyTheme(currentTheme, true);
+      });
+    }
+
+    // Reset default theme
+    if (btnResetDefaultTheme) {
+      btnResetDefaultTheme.addEventListener('click', () => {
+        if (confirm('Restaurar o tema padrão (Escuro / Outfit)?')) {
+          applyTheme(JSON.parse(JSON.stringify(DEFAULT_THEME)), true);
+        }
+      });
+    }
+
     // Generic Modal Close handler
     document.querySelectorAll('[data-close]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1295,9 +2437,14 @@
   }
 
   function openModal(modalEl) {
+    if (!modalEl) return;
     modalEl.classList.add('active');
     if (modalEl === modalBackup) {
       jsonPreview.value = JSON.stringify(state, null, 2);
+    } else if (modalEl === modalImportAi) {
+      initAiPromptPreview();
+    } else if (modalEl === modalTheme) {
+      updateThemeModalUI(state.theme || DEFAULT_THEME);
     }
   }
 
@@ -1331,7 +2478,7 @@
     }
   }
 
-  // Keyboard shortcut listener (F for Focus Mode, ESC to Exit)
+  // Keyboard shortcut listener (F for Focus Mode, T for Theme, ESC to Exit)
   document.addEventListener('keydown', (e) => {
     // Ignore hotkeys if user is currently typing in input, textarea, or contenteditable
     const activeEl = document.activeElement;
@@ -1346,6 +2493,10 @@
     if (e.key === 'f' || e.key === 'F') {
       e.preventDefault();
       toggleFocusMode();
+    } else if (e.key === 't' || e.key === 'T') {
+      e.preventDefault();
+      updateThemeModalUI(state.theme || DEFAULT_THEME);
+      openModal(modalTheme);
     } else if (e.key === 'Escape') {
       if (document.body.classList.contains('focus-mode')) {
         e.preventDefault();
