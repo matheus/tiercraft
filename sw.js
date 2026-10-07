@@ -2,7 +2,7 @@
    TIERCRAFT - SERVICE WORKER (PWA OFFLINE SUPPORT)
    ========================================================================== */
 
-const CACHE_NAME = 'tiercraft-v1.3.0';
+const CACHE_NAME = 'tiercraft-v1.3.1';
 
 // Core assets required for 100% offline functionality
 const PRECACHE_ASSETS = [
@@ -102,24 +102,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Local static assets: Cache-First, fallback to Network & cache update
+  // 3. Application Code (app.js, style.css): Network-First with Cache fallback
+  // Guarantees that updates in production are immediately visible to users without stale cache issues
+  const isCodeAsset = url.pathname.endsWith('.js') || url.pathname.endsWith('.css');
+  if (isCodeAsset) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(request, { ignoreSearch: true });
+        })
+    );
+    return;
+  }
+
+  // 4. Local static media assets (icons, images, audio): Cache-First, fallback to Network
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
+    caches.match(request, { ignoreSearch: true }).then((cachedResponse) => {
       if (cachedResponse) {
-        // Fetch in background to revalidate cache
-        fetch(request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse));
-            }
-          })
-          .catch(() => {
-            /* Offline, silence */
-          });
         return cachedResponse;
       }
-
-      // Not in cache, fetch from network
       return fetch(request).then((networkResponse) => {
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;

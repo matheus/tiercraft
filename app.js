@@ -310,13 +310,19 @@
           .then((registration) => {
             console.log('[TierCraft PWA] Service Worker registrado:', registration.scope);
 
+            // Proactively check for newer versions on every page load
+            registration.update().catch(() => {});
+
             // Listen for service worker updates
             registration.addEventListener('updatefound', () => {
               const installingWorker = registration.installing;
               if (installingWorker) {
                 installingWorker.addEventListener('statechange', () => {
                   if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    showNotificationToast('Nova versão disponível! Recarregue para atualizar.', 4000);
+                    showNotificationToast('Nova versão detectada! Atualizando...', 2500);
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 800);
                   }
                 });
               }
@@ -325,6 +331,15 @@
           .catch((err) => {
             console.warn('[TierCraft PWA] Falha ao registrar Service Worker:', err);
           });
+
+        // Ensure single auto-reload when a new Service Worker takes control
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
       });
     }
 
@@ -526,6 +541,7 @@
   // ==========================================
 
   function init() {
+    console.log('[TierCraft] v1.3.1 inicializado com sucesso.');
     loadState();
     setupEventListeners();
     setupPWA();
