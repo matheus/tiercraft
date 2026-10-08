@@ -172,6 +172,8 @@ O TierCraft vem integrado com uma funcionalidade mágica de IA: você pode pedir
 5. Copie a resposta da IA, volte para o TierCraft e cole no campo de importação (ou envie o arquivo `.json`).
 6. Clique em **✨ Importar Tier List**:
    * Uma nova lista aparecerá prontinha na sua tela!
+   * **Sem spoilers:** Os itens chegam no banco de itens com cores neutras para você mesmo classificar e se divertir descobrindo o ranking.
+   * **Hierarquia visual:** Prioriza imagens oficiais e específicas; se não houver boa imagem, usa emojis e ícones temáticos ou cards de texto limpos, evitando fotos genéricas desconexas.
    * **Seus dados antigos não são apagados:** a nova lista é adicionada como mais uma opção na sua coleção.
    * Se algum link de imagem falhar, o TierCraft converte o card automaticamente em um emblema de texto para que nada fique quebrado.
 

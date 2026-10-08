@@ -2,7 +2,7 @@
    TIERCRAFT - SERVICE WORKER (PWA OFFLINE SUPPORT)
    ========================================================================== */
 
-const CACHE_NAME = 'tiercraft-v1.3.1';
+const CACHE_NAME = 'tiercraft-v1.3.3';
 
 // Core assets required for 100% offline functionality
 const PRECACHE_ASSETS = [

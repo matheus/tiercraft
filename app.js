@@ -103,12 +103,12 @@
   };
 
   const FONT_MAP = {
-    'Outfit': "'Outfit', -apple-system, BlinkMacSystemFont, sans-serif",
-    'Plus Jakarta Sans': "'Plus Jakarta Sans', sans-serif",
-    'Inter': "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    'Space Grotesk': "'Space Grotesk', sans-serif",
-    'Fredoka': "'Fredoka', cursive, sans-serif",
-    'Press Start 2P': "'Press Start 2P', monospace, cursive"
+    'Outfit': "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif",
+    'Plus Jakarta Sans': "'Plus Jakarta Sans', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif",
+    'Inter': "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif",
+    'Space Grotesk': "'Space Grotesk', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif",
+    'Fredoka': "'Fredoka', cursive, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif",
+    'Press Start 2P': "'Press Start 2P', monospace, cursive, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji'"
   };
 
   // Default Presets Configuration
@@ -756,36 +756,93 @@
     attachDropzoneListeners(unrankedItemsContainer);
   }
 
+  function getItemDisplayText(item) {
+    if (!item) return '';
+    if (typeof item === 'string') return item.trim();
+
+    let text = String(item.text || item.label || item.name || item.title || '').trim();
+    const iconOrEmoji = String(item.emoji || item.icon || '').trim();
+
+    if (iconOrEmoji && !text.includes(iconOrEmoji)) {
+      text = `${iconOrEmoji} ${text}`.trim();
+    }
+    return text || 'Item';
+  }
+
+  function renderTextItemContent(containerEl, item) {
+    const oldWrap = containerEl.querySelector('.tier-item-text-wrap');
+    if (oldWrap) oldWrap.remove();
+
+    const displayText = typeof item === 'string' ? item : getItemDisplayText(item);
+    const contentWrap = document.createElement('div');
+    contentWrap.className = 'tier-item-text-wrap';
+
+    // Regex to match leading emoji or pictograph (including variation selectors & ZWJ)
+    const emojiMatch = displayText.match(/^((?:\p{Extended_Pictographic}|\uFE0F|\u200D)+)\s*(.*)$/u);
+
+    if (emojiMatch) {
+      const emojiPart = emojiMatch[1];
+      const textPart = emojiMatch[2].trim();
+
+      const emojiSpan = document.createElement('span');
+      emojiSpan.className = 'item-emoji-badge';
+      emojiSpan.textContent = emojiPart;
+      contentWrap.appendChild(emojiSpan);
+
+      if (textPart) {
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'item-label-text';
+        labelSpan.textContent = textPart;
+        contentWrap.appendChild(labelSpan);
+      }
+    } else {
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'item-label-text';
+      labelSpan.textContent = displayText;
+      contentWrap.appendChild(labelSpan);
+    }
+
+    containerEl.appendChild(contentWrap);
+  }
+
   function createItemElement(item) {
     const el = document.createElement('div');
     el.className = 'tier-item';
     el.draggable = true;
     el.dataset.itemId = item.id;
 
-    if (item.type === 'image') {
+    const rawSrc = String(item.src || item.url || item.image || '').trim();
+    const isImage = (item.type === 'image' || (!item.type && rawSrc)) && rawSrc.length > 0;
+
+    if (isImage) {
       const img = document.createElement('img');
-      img.src = item.src;
-      img.alt = item.label || 'Item';
+      img.src = rawSrc;
+      img.alt = item.label || item.name || 'Item';
+
+      const labelText = item.label || item.name || item.title || '';
+      let overlay = null;
+      if (labelText) {
+        overlay = document.createElement('div');
+        overlay.className = 'item-label-overlay';
+        overlay.textContent = labelText;
+      }
+
       img.onerror = () => {
         img.style.display = 'none';
+        if (overlay) overlay.style.display = 'none';
         el.classList.add('text-item-style');
-        el.style.backgroundColor = '#334155';
-        el.style.color = '#f8fafc';
-        el.textContent = item.label || 'Sem Foto';
+        el.style.backgroundColor = item.bgColor || '#334155';
+        el.style.color = item.textColor || '#f8fafc';
+        renderTextItemContent(el, item);
       };
-      el.appendChild(img);
 
-      if (item.label) {
-        const overlay = document.createElement('div');
-        overlay.className = 'item-label-overlay';
-        overlay.textContent = item.label;
-        el.appendChild(overlay);
-      }
-    } else if (item.type === 'text') {
+      el.appendChild(img);
+      if (overlay) el.appendChild(overlay);
+    } else {
       el.classList.add('text-item-style');
       el.style.backgroundColor = item.bgColor || '#2a2d3d';
       el.style.color = item.textColor || '#ffffff';
-      el.textContent = item.text || 'Texto';
+      renderTextItemContent(el, item);
     }
 
     // Item actions shown on hover
@@ -1018,30 +1075,49 @@
   const btnQuickEditItem = document.getElementById('btn-quick-edit-item');
   const btnQuickDeleteItem = document.getElementById('btn-quick-delete-item');
 
+  function renderThumbText(containerEl, text, bgColor, textColor) {
+    const textCard = document.createElement('div');
+    textCard.className = 'quick-thumb-text';
+    textCard.style.backgroundColor = bgColor || '#2a2d3d';
+    textCard.style.color = textColor || '#ffffff';
+
+    const clean = String(text || '').trim();
+    const emojiMatch = clean.match(/(?:\p{Extended_Pictographic}|\uFE0F|\u200D)+/u);
+    if (emojiMatch) {
+      textCard.textContent = emojiMatch[0];
+      textCard.style.fontSize = '1.35rem';
+    } else {
+      textCard.textContent = (clean || 'T').slice(0, 2).toUpperCase();
+      textCard.style.fontSize = '0.9rem';
+    }
+    containerEl.appendChild(textCard);
+  }
+
   function openQuickItemModal(item) {
     if (!modalQuickItem || !item) return;
     const list = getActiveList();
     if (!list) return;
 
+    const rawSrc = String(item.src || item.url || item.image || '').trim();
+    const isImage = (item.type === 'image' || (!item.type && rawSrc)) && rawSrc.length > 0;
+    const displayText = getItemDisplayText(item);
+
     // Set title & thumbnail preview
-    quickItemTitle.textContent = item.type === 'text' ? (item.text || 'Texto') : (item.label || 'Foto');
+    quickItemTitle.textContent = displayText || (isImage ? 'Foto' : 'Item');
     quickItemThumb.innerHTML = '';
-    if (item.type === 'image') {
+
+    if (isImage) {
       const img = document.createElement('img');
-      img.src = item.src;
-      img.alt = item.label || 'Item';
+      img.src = rawSrc;
+      img.alt = item.label || item.name || 'Item';
       img.onerror = () => {
         img.style.display = 'none';
-        quickItemThumb.textContent = item.label || 'Sem Foto';
+        quickItemThumb.innerHTML = '';
+        renderThumbText(quickItemThumb, displayText, item.bgColor, item.textColor);
       };
       quickItemThumb.appendChild(img);
     } else {
-      const textCard = document.createElement('div');
-      textCard.className = 'quick-thumb-text';
-      textCard.style.backgroundColor = item.bgColor || '#2a2d3d';
-      textCard.style.color = item.textColor || '#ffffff';
-      textCard.textContent = item.text || 'T';
-      quickItemThumb.appendChild(textCard);
+      renderThumbText(quickItemThumb, displayText, item.bgColor, item.textColor);
     }
 
     // Determine current location
@@ -1341,24 +1417,38 @@
     openModal(modalItem);
   }
 
+  function updateTextCardPreview(text, bgColor, textColor) {
+    if (!textCardPreview) return;
+    textCardPreview.innerHTML = '';
+    textCardPreview.style.backgroundColor = bgColor || '#2a2d3d';
+    textCardPreview.style.color = textColor || '#ffffff';
+    renderTextItemContent(textCardPreview, text || 'Texto de Exemplo');
+  }
+
   function openEditItemModal(item) {
     resetItemForm();
     editingItemId = item.id;
     document.getElementById('modal-item-title').textContent = 'Editar Item';
     btnSaveItem.textContent = 'Salvar Alterações';
 
-    if (item.type === 'image') {
+    const rawSrc = String(item.src || item.url || item.image || '').trim();
+    const isImage = (item.type === 'image' || (!item.type && rawSrc)) && rawSrc.length > 0;
+    const displayText = getItemDisplayText(item);
+
+    if (isImage) {
       selectItemTab('tab-image');
-      itemImageUrl.value = item.src || '';
-      itemImageLabel.value = item.label || '';
-    } else {
-      selectItemTab('tab-text');
-      itemTextTitle.value = item.text || '';
+      itemImageUrl.value = rawSrc;
+      itemImageLabel.value = item.label || item.name || '';
+      itemTextTitle.value = displayText || itemImageLabel.value;
       itemBgColor.value = item.bgColor || '#2a2d3d';
       itemTextColor.value = item.textColor || '#ffffff';
-      textCardPreview.textContent = item.text || 'Texto de Exemplo';
-      textCardPreview.style.backgroundColor = item.bgColor || '#2a2d3d';
-      textCardPreview.style.color = item.textColor || '#ffffff';
+      updateTextCardPreview(itemTextTitle.value, itemBgColor.value, itemTextColor.value);
+    } else {
+      selectItemTab('tab-text');
+      itemTextTitle.value = displayText;
+      itemBgColor.value = item.bgColor || '#2a2d3d';
+      itemTextColor.value = item.textColor || '#ffffff';
+      updateTextCardPreview(displayText, itemBgColor.value, itemTextColor.value);
     }
 
     openModal(modalItem);
@@ -1499,9 +1589,9 @@
     itemImageUrl.value = '';
     itemImageLabel.value = '';
     itemTextTitle.value = '';
-    textCardPreview.textContent = 'Texto de Exemplo';
-    textCardPreview.style.backgroundColor = '#2a2d3d';
-    textCardPreview.style.color = '#ffffff';
+    itemBgColor.value = '#2a2d3d';
+    itemTextColor.value = '#ffffff';
+    updateTextCardPreview('Texto de Exemplo', '#2a2d3d', '#ffffff');
   }
 
   // ==========================================
@@ -1548,31 +1638,19 @@
   // SINGLE TIERLIST AI IMPORT & PROMPT ENGINE
   // ==========================================
 
-  const AI_PROMPT_TEMPLATE = `Atue como um especialista e crie uma Tier List completa em formato JSON válido para o aplicativo TierCraft sobre o seguinte tema: [DIGITE SEU TEMA AQUI, EX: "Melhores Jogos de RPG de Todos os Tempos", "Melhores Animes Shonen dos Anos 2000", "Carros Esportivos Mais Marcantes", etc.].
+  const AI_PROMPT_TEMPLATE = `Atue como um especialista e crie uma Tier List completa em formato JSON válido para o aplicativo TierCraft sobre o seguinte tema: [DIGITE SEU TEMA AQUI, EX: "Melhores Jogos de RPG de Todos os Tempos", "Melhores Animes Shonen dos Anos 2000", "Linguagens de Programação", "Carros Esportivos Marcantes", etc.].
 
-Retorne EXCLUSIVAMENTE o código JSON puro (sem explicações antes ou depois), seguindo a estrutura abaixo:
+Retorne EXCLUSIVAMENTE o código JSON puro (sem comentários, sem conversas e sem textos antes ou depois do bloco JSON), seguindo estritamente a estrutura abaixo:
 
 {
   "title": "Nome da Tier List",
   "description": "Breve descrição contextualizando a classificação",
-  "defaultSoundId": "swoosh",
+  "defaultSoundId": "achievement",
   "rows": [
     {
       "label": "S",
       "color": "#ff4757",
-      "items": [
-        {
-          "type": "image",
-          "label": "Nome do Item 1",
-          "src": "https://url-direta-da-imagem.jpg"
-        },
-        {
-          "type": "text",
-          "text": "Nome do Item 2",
-          "bgColor": "#ff4757",
-          "textColor": "#ffffff"
-        }
-      ]
+      "items": []
     },
     {
       "label": "A",
@@ -1598,59 +1676,48 @@ Retorne EXCLUSIVAMENTE o código JSON puro (sem explicações antes ou depois), 
   "unrankedItems": [
     {
       "type": "image",
-      "label": "Item no Banco de Itens",
-      "src": "https://url-direta-da-imagem.jpg"
+      "label": "Item com Foto Específica",
+      "src": "https://url-publica-direta-e-especifica.jpg"
     },
     {
       "type": "text",
-      "text": "Outro Item",
-      "bgColor": "#6366f1",
+      "text": "🎮 Item com Emoji Representativo",
+      "bgColor": "#2a2d3d",
+      "textColor": "#ffffff"
+    },
+    {
+      "type": "text",
+      "text": "Item em Texto Puro",
+      "bgColor": "#2a2d3d",
       "textColor": "#ffffff"
     }
   ]
 }
 
 Regras obrigatórias:
-1. Você pode definir a quantidade de fileiras (rows) e os nomes mais adequados ao tema (ex: S, A, B, C, D ou "Obra-prima", "Excelente", "Bom", "Mediano", "Ruim").
-2. Cores hexadecimais sugeridas para as fileiras: #ff4757, #ffa502, #eccc68, #2ed573, #1e90ff, #9b59b6, #ec4899, #718093.
-3. Efeitos sonoros suportados (soundId): "swoosh", "pop", "achievement", "sparkle", "impact", "fail", "applause", "none".
-4. Itens do tipo "image" devem ter "src" (URL direta acessível da web) e "label" (rótulo descritivo).
-5. Itens do tipo "text" devem ter "text" com o nome, e opcionais "bgColor" e "textColor".
-6. Os itens podem vir previamente distribuídos nas fileiras (em rows.items) ou agrupados em "unrankedItems" para o usuário classificar manualmente.`;
+1. Fileiras (rows): Defina as fileiras e nomes mais adequados ao tema (ex: S, A, B, C, D ou "Obra-prima", "Excelente", "Bom", "Mediano", "Ruim"). Deixe o array "items" de cada fileira VAZIO ([]) e coloque todos os itens a serem classificados em "unrankedItems" para que o usuário possa jogar e classificar manualmente cada um.
+2. Cores das fileiras: Cores hexadecimais sugeridas para as fileiras: #ff4757, #ffa502, #eccc68, #2ed573, #1e90ff, #9b59b6, #ec4899, #718093.
+3. REGRA ANTI-SPOILER DE CORES (MUITO IMPORTANTE): A cor da fileira ("color") pertence EXCLUSIVAMENTE ao rótulo visual da fileira (o cabeçalho do tier). NUNCA defina o "bgColor" dos itens com a cor da fileira onde você classificaria o item! Se os itens forem pintados com a cor do tier, estragaria a brincadeira entregando antecipadamente o resultado. Todos os cards de texto DEVEM usar cor de fundo neutra e uniforme: "bgColor": "#2a2d3d" e "textColor": "#ffffff".
+4. REGRA DE PRIORIDADE VISUAL DOS ITENS (Hierarquia obrigatória):
+   - 1ª Opção (Imagem real e específica): Use {"type": "image", "src": "...", "label": "..."} SOMENTE se você tiver uma URL direta de imagem da web (HTTPS) que seja de alta qualidade e ESPECÍFICA e fiel ao item exato (ex: capa oficial, logo real, foto real do item/personagem). É TERMINANTEMENTE PROIBIDO usar fotos genéricas de bancos de imagens (ex: fotos de controles genéricos para jogos, computadores genéricos para software, pessoas aleatórias ou wallpapers abstratos). Se não houver uma URL direta e específica para o item, NÃO use imagem.
+   - 2ª Opção (Ícone ou Emoji temático - Quando não houver imagem boa): Se não encontrar uma imagem direta, boa e específica para o item, crie o item como card de texto ("type": "text") incluindo um emoji ou ícone temático representativo no início do texto (ex: "☕ Café Expresso", "🏎️ Ferrari F40", "🐍 Python", "🍕 Pizza Margherita", "⚔️ The Witcher 3").
+   - 3ª Opção (Texto puro): Se também não encontrar ou não fizer sentido nenhum emoji ou ícone para o item, use apenas o nome limpo do item em "text" (ex: "Nome do Item").
+5. Efeitos sonoros suportados (soundId / defaultSoundId): "swoosh", "pop", "achievement", "sparkle", "impact", "fail", "applause", "none".`;
 
   const AI_JSON_EXAMPLE = `{
   "title": "Melhores Jogos da Década",
-  "description": "Ranking dos maiores lançamentos dos videogames dos últimos 10 anos.",
+  "description": "Classifique os maiores lançamentos dos videogames dos últimos anos.",
   "defaultSoundId": "achievement",
   "rows": [
     {
       "label": "Obra-Prima (S)",
       "color": "#ff4757",
-      "items": [
-        {
-          "type": "image",
-          "label": "The Witcher 3",
-          "src": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300"
-        },
-        {
-          "type": "text",
-          "text": "Chrono Trigger",
-          "bgColor": "#ff4757",
-          "textColor": "#ffffff"
-        }
-      ]
+      "items": []
     },
     {
       "label": "Excelente (A)",
       "color": "#ffa502",
-      "items": [
-        {
-          "type": "text",
-          "text": "Red Dead Redemption 2",
-          "bgColor": "#ffa502",
-          "textColor": "#ffffff"
-        }
-      ]
+      "items": []
     },
     {
       "label": "Muito Bom (B)",
@@ -1661,22 +1728,45 @@ Regras obrigatórias:
       "label": "Bom (C)",
       "color": "#2ed573",
       "items": []
+    },
+    {
+      "label": "Mediano (D)",
+      "color": "#1e90ff",
+      "items": []
     }
   ],
   "unrankedItems": [
     {
       "type": "image",
-      "label": "Elden Ring",
-      "src": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300"
+      "label": "The Witcher 3",
+      "src": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300"
+    },
+    {
+      "type": "text",
+      "text": "⚔️ Chrono Trigger",
+      "bgColor": "#2a2d3d",
+      "textColor": "#ffffff"
+    },
+    {
+      "type": "text",
+      "text": "🤠 Red Dead Redemption 2",
+      "bgColor": "#2a2d3d",
+      "textColor": "#ffffff"
+    },
+    {
+      "type": "text",
+      "text": "💍 Elden Ring",
+      "bgColor": "#2a2d3d",
+      "textColor": "#ffffff"
     },
     {
       "type": "text",
       "text": "Cyberpunk 2077",
-      "bgColor": "#6366f1",
+      "bgColor": "#2a2d3d",
       "textColor": "#ffffff"
     }
   ]
-}`;
+};`;
 
   function importSingleTierListJSON(rawInput) {
     if (!rawInput || !rawInput.trim()) {
@@ -1774,6 +1864,26 @@ Regras obrigatórias:
         if (itemObj) sanitizedUnranked.push(itemObj);
       });
 
+      // Anti-spoiler safeguard: Collect all row colors to prevent items from accidentally leaking their tier
+      const rowColorsLower = new Set(sanitizedRows.map(r => (r.color || '').toLowerCase().trim()).filter(Boolean));
+
+      // Neutralize any unranked items that leak tier colors
+      sanitizedUnranked.forEach(item => {
+        if (item.type === 'text' && item.bgColor && rowColorsLower.has(item.bgColor.toLowerCase().trim())) {
+          item.bgColor = '#2a2d3d';
+        }
+      });
+
+      // Neutralize row items whose bgColor duplicates the parent row's color
+      sanitizedRows.forEach(row => {
+        const rowColorLower = (row.color || '').toLowerCase().trim();
+        row.items.forEach(item => {
+          if (item.type === 'text' && item.bgColor && item.bgColor.toLowerCase().trim() === rowColorLower) {
+            item.bgColor = '#2a2d3d';
+          }
+        });
+      });
+
       // Append to state WITHOUT overwriting existing lists!
       state.tierLists[newId] = {
         id: newId,
@@ -1821,30 +1931,33 @@ Regras obrigatórias:
       return {
         id: itemId,
         type: 'text',
-        text: it,
+        text: it.trim(),
         bgColor: '#2a2d3d',
         textColor: '#ffffff'
       };
     }
 
-    const type = it.type || ((it.src || it.url || it.image) ? 'image' : 'text');
+    const rawSrc = String(it.src || it.url || it.image || '').trim();
+    const isImageType = (it.type === 'image' || (!it.type && rawSrc)) && rawSrc.length > 0;
 
-    if (type === 'image') {
-      const src = it.src || it.url || it.image || '';
-      const label = it.label || it.name || it.title || '';
-      if (!src && !label) return null;
+    if (isImageType) {
+      const label = String(it.label || it.name || it.title || '').trim();
       return {
         id: itemId,
         type: 'image',
-        src: src,
+        src: rawSrc,
         label: label
       };
     } else {
-      const text = it.text || it.label || it.name || it.title || 'Item';
+      let text = String(it.text || it.label || it.name || it.title || 'Item').trim();
+      const iconOrEmoji = String(it.emoji || it.icon || '').trim();
+      if (iconOrEmoji && !text.includes(iconOrEmoji)) {
+        text = `${iconOrEmoji} ${text}`.trim();
+      }
       return {
         id: itemId,
         type: 'text',
-        text: text,
+        text: text || 'Item',
         bgColor: it.bgColor || it.bg_color || '#2a2d3d',
         textColor: it.textColor || it.text_color || '#ffffff'
       };
@@ -2153,13 +2266,33 @@ Regras obrigatórias:
 
     // Text Card Live Preview
     itemTextTitle.addEventListener('input', () => {
-      textCardPreview.textContent = itemTextTitle.value.trim() || 'Texto de Exemplo';
+      updateTextCardPreview(itemTextTitle.value.trim() || 'Texto de Exemplo', itemBgColor.value, itemTextColor.value);
     });
     itemBgColor.addEventListener('input', () => {
-      textCardPreview.style.backgroundColor = itemBgColor.value;
+      updateTextCardPreview(itemTextTitle.value.trim() || 'Texto de Exemplo', itemBgColor.value, itemTextColor.value);
     });
     itemTextColor.addEventListener('input', () => {
-      textCardPreview.style.color = itemTextColor.value;
+      updateTextCardPreview(itemTextTitle.value.trim() || 'Texto de Exemplo', itemBgColor.value, itemTextColor.value);
+    });
+
+    // Emoji Quick Picker Buttons
+    document.querySelectorAll('.btn-quick-emoji').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const emoji = btn.dataset.emoji;
+        if (!emoji) return;
+        const currentText = itemTextTitle.value.trim();
+        const match = currentText.match(/^((?:\p{Extended_Pictographic}|\uFE0F|\u200D)+)\s*(.*)$/u);
+        if (match) {
+          itemTextTitle.value = `${emoji} ${match[2]}`.trim();
+        } else if (currentText) {
+          itemTextTitle.value = `${emoji} ${currentText}`;
+        } else {
+          itemTextTitle.value = `${emoji} `;
+        }
+        itemTextTitle.focus();
+        updateTextCardPreview(itemTextTitle.value, itemBgColor.value, itemTextColor.value);
+      });
     });
 
     btnSaveItem.addEventListener('click', handleSaveItem);

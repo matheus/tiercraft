@@ -13,7 +13,7 @@ Copie e cole o prompt abaixo no ChatGPT, Claude, Gemini ou qualquer outro assist
 ```text
 Atue como um especialista e crie uma Tier List completa em formato JSON válido para o aplicativo TierCraft sobre o seguinte tema: [SEU TEMA AQUI, ex: Melhores Jogos de RPG de Todos os Tempos].
 
-Retorne EXCLUSIVAMENTE o bloco de código JSON puro (sem comentários antes ou depois), estritamente de acordo com o esquema abaixo:
+Retorne EXCLUSIVAMENTE o bloco de código JSON puro (sem comentários, sem conversas e sem textos antes ou depois do bloco JSON), seguindo estritamente a estrutura abaixo:
 
 {
   "title": "Nome da Tier List",
@@ -21,39 +21,27 @@ Retorne EXCLUSIVAMENTE o bloco de código JSON puro (sem comentários antes ou d
   "defaultSoundId": "achievement",
   "rows": [
     {
-      "label": "Obra-prima (S)",
+      "label": "S",
       "color": "#ff4757",
-      "items": [
-        {
-          "type": "image",
-          "label": "Nome do Item",
-          "src": "https://url-publica-da-imagem.jpg"
-        },
-        {
-          "type": "text",
-          "text": "Item em Card de Texto",
-          "bgColor": "#ff4757",
-          "textColor": "#ffffff"
-        }
-      ]
+      "items": []
     },
     {
-      "label": "Excelente (A)",
+      "label": "A",
       "color": "#ffa502",
       "items": []
     },
     {
-      "label": "Bom (B)",
+      "label": "B",
       "color": "#eccc68",
       "items": []
     },
     {
-      "label": "Mediano (C)",
+      "label": "C",
       "color": "#2ed573",
       "items": []
     },
     {
-      "label": "Ruim (D)",
+      "label": "D",
       "color": "#1e90ff",
       "items": []
     }
@@ -61,25 +49,33 @@ Retorne EXCLUSIVAMENTE o bloco de código JSON puro (sem comentários antes ou d
   "unrankedItems": [
     {
       "type": "image",
-      "label": "Item Pendente 1",
-      "src": "https://url-publica-da-imagem.jpg"
+      "label": "Item com Foto Específica",
+      "src": "https://url-publica-direta-e-especifica.jpg"
     },
     {
       "type": "text",
-      "text": "Item Pendente 2",
-      "bgColor": "#6366f1",
+      "text": "🎮 Item com Emoji Representativo",
+      "bgColor": "#2a2d3d",
+      "textColor": "#ffffff"
+    },
+    {
+      "type": "text",
+      "text": "Item em Texto Puro",
+      "bgColor": "#2a2d3d",
       "textColor": "#ffffff"
     }
   ]
 }
 
-Regras:
-1. Adapte a quantidade e os nomes das fileiras (rows) ao tema escolhido (ex: tiers convencionais S, A, B, C, D ou temáticos como "Essencial", "Recomendado", "Dispensável").
-2. Cores sugeridas para as fileiras (hex): #ff4757 (vermelho), #ffa502 (laranja), #eccc68 (amarelo), #2ed573 (verde), #1e90ff (azul), #9b59b6 (roxo), #ec4899 (rosa), #718093 (cinza).
-3. Efeitos sonoros suportados (defaultSoundId): "swoosh", "pop", "achievement", "sparkle", "impact", "fail", "applause", "none".
-4. Cards do tipo "image": use "src" com URLs públicas e diretas de imagem da web (Unsplash, Wikimedia, CDNs estáveis) e forneça a legenda em "label".
-5. Cards do tipo "text": defina o texto em "text" e opcionalmente as cores em "bgColor" e "textColor".
-6. Você pode pré-classificar alguns itens colocando-os dentro do array "items" da respectiva fileira em "rows", e/ou disponibilizar itens no banco para classificação do usuário em "unrankedItems".
+Regras obrigatórias:
+1. Fileiras (rows): Defina as fileiras e nomes mais adequados ao tema (ex: S, A, B, C, D ou "Obra-prima", "Excelente", "Bom", "Mediano", "Ruim"). Deixe o array "items" de cada fileira VAZIO ([]) e coloque todos os itens a serem classificados em "unrankedItems" para que o usuário possa jogar e classificar manualmente cada um.
+2. Cores das fileiras: Cores hexadecimais sugeridas para as fileiras: #ff4757, #ffa502, #eccc68, #2ed573, #1e90ff, #9b59b6, #ec4899, #718093.
+3. REGRA ANTI-SPOILER DE CORES (MUITO IMPORTANTE): A cor da fileira ("color") pertence EXCLUSIVAMENTE ao rótulo visual da fileira (o cabeçalho do tier). NUNCA defina o "bgColor" dos itens com a cor da fileira onde você classificaria o item! Se os itens forem pintados com a cor do tier, estragaria a brincadeira entregando antecipadamente o resultado. Todos os cards de texto DEVEM usar cor de fundo neutra e uniforme: "bgColor": "#2a2d3d" e "textColor": "#ffffff".
+4. REGRA DE PRIORIDADE VISUAL DOS ITENS (Hierarquia obrigatória):
+   - 1ª Opção (Imagem real e específica): Use {"type": "image", "src": "...", "label": "..."} SOMENTE se você tiver uma URL direta de imagem da web (HTTPS) que seja de alta qualidade e ESPECÍFICA e fiel ao item exato (ex: capa oficial, logo real, foto real do item/personagem). É TERMINANTEMENTE PROIBIDO usar fotos genéricas de bancos de imagens (ex: fotos de controles genéricos para jogos, computadores genéricos para software, pessoas aleatórias ou wallpapers abstratos). Se não houver uma URL direta e específica para o item, NÃO use imagem.
+   - 2ª Opção (Ícone ou Emoji temático - Quando não houver imagem boa): Se não encontrar uma imagem direta, boa e específica para o item, crie o item como card de texto ("type": "text") incluindo um emoji ou ícone temático representativo no início do texto (ex: "☕ Café Expresso", "🏎️ Ferrari F40", "🐍 Python", "🍕 Pizza Margherita", "⚔️ The Witcher 3").
+   - 3ª Opção (Texto puro): Se também não encontrar ou não fizer sentido nenhum emoji ou ícone para o item, use apenas o nome limpo do item em "text" (ex: "Nome do Item").
+5. Efeitos sonoros suportados (soundId / defaultSoundId): "swoosh", "pop", "achievement", "sparkle", "impact", "fail", "applause", "none".
 ```
 
 ---
@@ -90,11 +86,11 @@ Regras:
 
 | Campo | Tipo | Obrigatório | Descrição |
 | :--- | :--- | :--- | :--- |
-| `title` | `string` | **Sim** | O título principal da Tier List (ex: `"Melhores Filmes de Ficção Científica"`). |
+| `title` | `string` | **Sim** | O título principal da Tier List (ex: `"Melhores Jogos da Década"`). |
 | `description` | `string` | Não | Breve resumo ou descrição que aparece abaixo do título. |
-| `defaultSoundId` | `string` | Não | Som tocado ao mover cards. Opções: `"swoosh"`, `"pop"`, `"achievement"`, `"sparkle"`, `"impact"`, `"fail"`, `"applause"`, `"none"`. (Padrão: `"swoosh"`). |
+| `defaultSoundId` | `string` | Não | Som tocado ao mover cards. Opções: `"swoosh"`, `"pop"`, `"achievement"`, `"sparkle"`, `"impact"`, `"fail"`, `"applause"`, `"none"`. (Padrão: `"achievement"`). |
 | `rows` | `Array<Row>` | **Sim** | Lista de fileiras / categorias do ranking. |
-| `unrankedItems` | `Array<Item>` | Não | Itens colocados no banco de cards não classificados (aguardando o usuário arrastar). |
+| `unrankedItems` | `Array<Item>` | Não | Itens colocados no banco de cards não classificados (aguardando o usuário arrastar e classificar). |
 
 ---
 
@@ -106,30 +102,46 @@ Regras:
 | `label` | `string` | **Sim** | Nome da fileira (ex: `"S"`, `"A"`, `"Obra-Prima"`, `"Favoritos"`). |
 | `color` | `string` | Não | Cor de destaque em formato hexadecimal (ex: `"#ff4757"`). Se omitido, aplica a paleta padrão. |
 | `soundId` | `string` | Não | Som específico ao soltar nesta fileira (`"default"` para usar o padrão da lista). |
-| `items` | `Array<Item>` | Não | Cards já classificados dentro desta fileira. |
+| `items` | `Array<Item>` | Não | Cards já classificados dentro desta fileira. *Para listas prontas para jogar, mantenha vazio (`[]`) e coloque os itens em `unrankedItems`.* |
 
 ---
 
-### 3. Objeto de Card / Item (`Item`)
+### 3. Objeto de Card / Item (`Item`) e Hierarquia Visual
 
-O TierCraft suporta dois tipos de itens: **Imagens da Web** e **Cards de Texto**.
+O TierCraft oferece suporte inteligente para exibição de itens seguindo uma hierarquia de 3 níveis:
 
-#### A. Item do tipo Imagem (`"type": "image"`)
+#### 1ª Prioridade: Item do tipo Imagem (`"type": "image"`)
+*Use SOMENTE quando possuir URL direta de alta qualidade e realmente específica do item.*
+
 | Campo | Tipo | Obrigatório | Descrição |
 | :--- | :--- | :--- | :--- |
 | `type` | `string` | **Sim** | Valor fixo `"image"`. |
 | `src` | `string` | **Sim** | URL direta da imagem (HTTPS). Aceita formatos `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg`. *Sinônimos aceitos: `url`, `image`.* |
 | `label` | `string` | Não | Legenda do card (exibida em overlay na parte inferior da imagem). *Sinônimos aceitos: `name`, `title`.* |
 
-> **Nota de Resiliência:** Se a URL de uma imagem falhar (ex: link quebrado ou bloqueado por CORS), o TierCraft converte automaticamente o card para um badge textual elegante com o valor de `label`, garantindo que a lista nunca quebre.
+> **Nota de Resiliência:** Se a URL de uma imagem falhar (link quebrado ou bloqueado por CORS), o TierCraft converte automaticamente o card para um badge textual elegante com o valor de `label`, garantindo que a lista nunca quebre.
 
-#### B. Item do tipo Card de Texto (`"type": "text"`)
+#### 2ª Prioridade: Card com Ícone ou Emoji (`"type": "text"`)
+*Quando não houver imagem direta específica, utilize um emoji ou ícone temático representativo no início do nome.*
+
 | Campo | Tipo | Obrigatório | Descrição |
 | :--- | :--- | :--- | :--- |
 | `type` | `string` | **Sim** | Valor fixo `"text"`. |
-| `text` | `string` | **Sim** | Texto exibido centralizado no card. *Sinônimos aceitos: `name`, `label`.* |
-| `bgColor` | `string` | Não | Cor de fundo em hexadecimal (padrão: `"#2a2d3d"`). |
+| `text` | `string` | **Sim** | Texto do card contendo o emoji/ícone e o nome (ex: `"🍕 Pizza Margherita"`, `"🏎️ Ferrari F40"`, `"🐍 Python"`). |
+| `bgColor` | `string` | Não | Cor de fundo em hexadecimal (**Anti-spoiler:** use sempre o padrão neutro `"#2a2d3d"`). |
 | `textColor` | `string` | Não | Cor do texto em hexadecimal (padrão: `"#ffffff"`). |
+
+#### 3ª Prioridade: Card de Texto Puro (`"type": "text"`)
+*Quando não houver imagem nem emoji representativo.*
+
+| Campo | Tipo | Obrigatório | Descrição |
+| :--- | :--- | :--- | :--- |
+| `type` | `string` | **Sim** | Valor fixo `"text"`. |
+| `text` | `string` | **Sim** | Nome do item em texto limpo (ex: `"Item Simples"`). |
+| `bgColor` | `string` | Não | Padrão neutro `"#2a2d3d"`. |
+| `textColor` | `string` | Não | Padrão `"#ffffff"`. |
+
+> 🛡️ **Regra Anti-Spoiler:** O TierCraft neutraliza automaticamente cores de fundo de cards que correspondam às cores das fileiras, garantindo que o usuário nunca receba spoilers de classificação antes de jogar!
 
 ---
 
@@ -137,93 +149,64 @@ O TierCraft suporta dois tipos de itens: **Imagens da Web** e **Cards de Texto**
 
 ```json
 {
-  "title": "Melhores Linguagens de Programação",
-  "description": "Classificação para desenvolvimento web, mobile e backend moderno.",
-  "defaultSoundId": "pop",
+  "title": "Melhores Jogos da Década",
+  "description": "Classifique os maiores lançamentos dos videogames dos últimos anos.",
+  "defaultSoundId": "achievement",
   "rows": [
     {
-      "label": "Essenciais (S)",
+      "label": "Obra-Prima (S)",
       "color": "#ff4757",
-      "items": [
-        {
-          "type": "text",
-          "text": "TypeScript",
-          "bgColor": "#3178c6",
-          "textColor": "#ffffff"
-        },
-        {
-          "type": "text",
-          "text": "Python",
-          "bgColor": "#3776ab",
-          "textColor": "#ffffff"
-        }
-      ]
+      "items": []
     },
     {
-      "label": "Muito Fortes (A)",
+      "label": "Excelente (A)",
       "color": "#ffa502",
-      "items": [
-        {
-          "type": "text",
-          "text": "Rust",
-          "bgColor": "#dea584",
-          "textColor": "#000000"
-        },
-        {
-          "type": "text",
-          "text": "Go",
-          "bgColor": "#00add8",
-          "textColor": "#ffffff"
-        }
-      ]
+      "items": []
     },
     {
-      "label": "Consolidadas (B)",
+      "label": "Muito Bom (B)",
       "color": "#eccc68",
-      "items": [
-        {
-          "type": "text",
-          "text": "Java",
-          "bgColor": "#b07219",
-          "textColor": "#ffffff"
-        },
-        {
-          "type": "text",
-          "text": "C#",
-          "bgColor": "#178600",
-          "textColor": "#ffffff"
-        }
-      ]
+      "items": []
     },
     {
-      "label": "Legado / Nicho (C)",
+      "label": "Bom (C)",
       "color": "#2ed573",
+      "items": []
+    },
+    {
+      "label": "Mediano (D)",
+      "color": "#1e90ff",
       "items": []
     }
   ],
   "unrankedItems": [
     {
+      "type": "image",
+      "label": "The Witcher 3",
+      "src": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300"
+    },
+    {
       "type": "text",
-      "text": "PHP",
-      "bgColor": "#4f5d95",
+      "text": "⚔️ Chrono Trigger",
+      "bgColor": "#2a2d3d",
       "textColor": "#ffffff"
     },
     {
       "type": "text",
-      "text": "Ruby",
-      "bgColor": "#701516",
+      "text": "🤠 Red Dead Redemption 2",
+      "bgColor": "#2a2d3d",
       "textColor": "#ffffff"
     },
     {
       "type": "text",
-      "text": "C++",
-      "bgColor": "#f34b7d",
+      "text": "💍 Elden Ring",
+      "bgColor": "#2a2d3d",
       "textColor": "#ffffff"
     },
     {
       "type": "text",
-      "text": "Kotlin",
-      "bgColor": "#a97bff",
+      "text": "Cyberpunk 2077",
+      "bgColor": "#2a2d3d",
       "textColor": "#ffffff"
     }
   ]
@@ -239,4 +222,4 @@ O TierCraft suporta dois tipos de itens: **Imagens da Web** e **Cards de Texto**
 3. Na janela que se abre:
    - Se você copiou o código da IA, cole na caixa de texto e clique em **✨ Importar Tier List**.
    - Se salvou como arquivo `.json`, clique em **Escolher Arquivo .JSON** que ele carrega e importa automaticamente.
-4. Sua nova Tier List será aberta imediatamente, sem apagar nenhuma de suas listas anteriores!
+4. Sua nova Tier List será aberta imediatamente com os itens prontos no banco para você classificar, sem dar spoilers das notas e sem apagar nenhuma de suas listas anteriores!
